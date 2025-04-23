@@ -14,12 +14,15 @@ import {
   KeyboardAvoidingView,
   Platform,
   SafeAreaView,
+  Dimensions,
 } from "react-native";
-import { Check, Plus, Trash2, Edit3 } from "lucide-react-native";
+import { Check, Plus, Trash2 } from "lucide-react-native";
 import { useFonts, Raleway_700Bold, Raleway_400Regular } from "@expo-google-fonts/raleway";
 
-const ACCENT = "#6C63FF";
-const BG = "#F7F7FB";
+const ACCENT = "#7C3AED"; // playful purple
+const ACCENT2 = "#F472B6"; // playful pink
+const BG_GRADIENT_START = "#F7F0FF";
+const BG_GRADIENT_END = "#E0EAFC";
 const CARD = "#FFFFFF";
 const TEXT = "#22223B";
 const SUBTLE = "#9A9AB0";
@@ -32,10 +35,20 @@ type Todo = {
   completed: boolean;
 };
 
+function GradientBackground({ children }: { children: React.ReactNode }) {
+  // Simple gradient using two absolutely positioned Views
+  return (
+    <View style={{ flex: 1 }}>
+      <View style={styles.gradientBg} />
+      {children}
+    </View>
+  );
+}
+
 function EmptyState() {
   return (
     <View style={styles.emptyContainer}>
-      <Text style={styles.emptyEmoji}>📝</Text>
+      <Text style={styles.emptyEmoji}>🦄</Text>
       <Text style={styles.emptyText}>No todos yet!</Text>
       <Text style={styles.emptySub}>Tap the + to add your first task.</Text>
     </View>
@@ -75,6 +88,7 @@ function TodoItem({
         style={styles.checkbox}
         onPress={onToggle}
         accessibilityLabel={todo.completed ? "Mark as incomplete" : "Mark as complete"}
+        activeOpacity={0.7}
       >
         <View
           style={[
@@ -82,13 +96,14 @@ function TodoItem({
             todo.completed && { backgroundColor: ACCENT, borderColor: ACCENT },
           ]}
         >
-          {todo.completed && <Check color="#fff" size={18} />}
+          {todo.completed && <Check color="#fff" size={20} />}
         </View>
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.todoTextWrap}
         onPress={onEdit}
         accessibilityLabel="Edit todo"
+        activeOpacity={0.7}
       >
         <Text
           style={[
@@ -104,8 +119,9 @@ function TodoItem({
         style={styles.deleteBtn}
         onPress={onDelete}
         accessibilityLabel="Delete todo"
+        activeOpacity={0.7}
       >
-        <Trash2 color={SUBTLE} size={20} />
+        <Trash2 color={SUBTLE} size={22} />
       </TouchableOpacity>
     </Animated.View>
   );
@@ -131,7 +147,7 @@ function TodoModal({
   return (
     <Modal
       visible={visible}
-      animationType="slide"
+      animationType="fade"
       transparent
       onRequestClose={onClose}
     >
@@ -140,7 +156,7 @@ function TodoModal({
           behavior={Platform.OS === "ios" ? "padding" : undefined}
           style={styles.modalContainer}
         >
-          <View style={styles.modalCard}>
+          <Animated.View style={styles.modalCard}>
             <Text style={styles.modalTitle}>
               {initialText ? "Edit Todo" : "New Todo"}
             </Text>
@@ -184,7 +200,7 @@ function TodoModal({
                 <Text style={[styles.modalBtnText, { color: ACCENT }]}>Cancel</Text>
               </Pressable>
             </View>
-          </View>
+          </Animated.View>
         </KeyboardAvoidingView>
       </View>
     </Modal>
@@ -239,103 +255,156 @@ export default function App() {
     );
   };
 
+  // FAB animation
+  const fabScale = useRef(new Animated.Value(1)).current;
+  const animateFab = () => {
+    Animated.sequence([
+      Animated.timing(fabScale, {
+        toValue: 1.12,
+        duration: 120,
+        useNativeDriver: true,
+      }),
+      Animated.timing(fabScale, {
+        toValue: 1,
+        duration: 120,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <Text style={styles.header}>My Todos</Text>
-        <FlatList
-          data={todos}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={{ flexGrow: 1, paddingBottom: 100 }}
-          renderItem={({ item }) => (
-            <TodoItem
-              todo={item}
-              onToggle={() => handleToggle(item.id)}
-              onDelete={() => handleDelete(item.id)}
-              onEdit={() => {
-                setEditing({ id: item.id, text: item.text });
+      <GradientBackground>
+        <View style={styles.container}>
+          <Text style={styles.header}>My Todos</Text>
+          <FlatList
+            data={todos}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={{ flexGrow: 1, paddingBottom: 120 }}
+            renderItem={({ item }) => (
+              <TodoItem
+                todo={item}
+                onToggle={() => handleToggle(item.id)}
+                onDelete={() => handleDelete(item.id)}
+                onEdit={() => {
+                  setEditing({ id: item.id, text: item.text });
+                  setModalVisible(true);
+                }}
+              />
+            )}
+            ListEmptyComponent={<EmptyState />}
+            showsVerticalScrollIndicator={false}
+          />
+          <Animated.View style={[styles.fabShadow, { transform: [{ scale: fabScale }] }]}>
+            <TouchableOpacity
+              style={styles.fab}
+              onPress={() => {
+                animateFab();
+                setEditing(null);
                 setModalVisible(true);
               }}
-            />
-          )}
-          ListEmptyComponent={<EmptyState />}
-          showsVerticalScrollIndicator={false}
-        />
-        <TouchableOpacity
-          style={styles.fab}
-          onPress={() => {
-            setEditing(null);
-            setModalVisible(true);
-          }}
-          accessibilityLabel="Add todo"
-        >
-          <Plus color="#fff" size={28} />
-        </TouchableOpacity>
-        <TodoModal
-          visible={modalVisible}
-          onClose={() => {
-            setEditing(null);
-            setModalVisible(false);
-          }}
-          onSave={(text) => {
-            if (editing) {
-              handleEdit(text);
-            } else {
-              handleAdd(text);
-            }
-          }}
-          initialText={editing?.text}
-        />
-      </View>
+              accessibilityLabel="Add todo"
+              activeOpacity={0.8}
+            >
+              <Plus color="#fff" size={32} />
+            </TouchableOpacity>
+          </Animated.View>
+          <TodoModal
+            visible={modalVisible}
+            onClose={() => {
+              setEditing(null);
+              setModalVisible(false);
+            }}
+            onSave={(text) => {
+              if (editing) {
+                handleEdit(text);
+              } else {
+                handleAdd(text);
+              }
+            }}
+            initialText={editing?.text}
+          />
+        </View>
+      </GradientBackground>
     </SafeAreaView>
   );
 }
 
+const { width } = Dimensions.get("window");
+
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: BG,
+    backgroundColor: BG_GRADIENT_START,
+  },
+  gradientBg: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: -1,
+    backgroundColor: BG_GRADIENT_START,
+    // Simulate a gradient with two overlapping views
+    // (for real gradients, use expo-linear-gradient, but keeping it dependency-free)
+    borderBottomLeftRadius: width * 0.7,
+    borderBottomRightRadius: width * 0.7,
+    height: 340,
+    top: -80,
+    left: -width * 0.1,
+    right: -width * 0.1,
+    background: undefined,
+    backgroundColor: BG_GRADIENT_START,
+    shadowColor: ACCENT2,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.12,
+    shadowRadius: 32,
+    elevation: 8,
   },
   container: {
     flex: 1,
-    backgroundColor: BG,
+    backgroundColor: "transparent",
     paddingHorizontal: 20,
     paddingTop: 10,
   },
   header: {
     fontFamily: "Raleway_700Bold",
-    fontSize: 32,
-    color: TEXT,
-    marginBottom: 18,
-    marginTop: 10,
+    fontSize: 36,
+    color: ACCENT,
+    marginBottom: 22,
+    marginTop: 18,
     letterSpacing: 0.5,
+    textShadowColor: "#f3e8ff",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 8,
   },
   todoCard: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: CARD,
-    borderRadius: 16,
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    marginBottom: 14,
-    shadowColor: SHADOW,
-    shadowOffset: { width: 0, height: 2 },
+    borderRadius: 18,
+    paddingVertical: 18,
+    paddingHorizontal: 18,
+    marginBottom: 16,
+    shadowColor: "#B794F4",
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.13,
-    shadowRadius: 6,
-    elevation: 2,
+    shadowRadius: 12,
+    elevation: 4,
   },
   checkbox: {
-    marginRight: 14,
+    marginRight: 18,
   },
   checkboxBase: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    borderWidth: 2,
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    borderWidth: 2.5,
     borderColor: ACCENT,
     backgroundColor: "#fff",
     alignItems: "center",
     justifyContent: "center",
+    shadowColor: ACCENT2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
   },
   todoTextWrap: {
     flex: 1,
@@ -343,58 +412,72 @@ const styles = StyleSheet.create({
   },
   todoText: {
     fontFamily: "Raleway_400Regular",
-    fontSize: 18,
+    fontSize: 20,
     color: TEXT,
+    letterSpacing: 0.1,
   },
   deleteBtn: {
-    marginLeft: 6,
-    padding: 4,
-    borderRadius: 8,
+    marginLeft: 8,
+    padding: 6,
+    borderRadius: 10,
+    backgroundColor: "#F8F0FC",
+    shadowColor: "#F472B6",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  fabShadow: {
+    position: "absolute",
+    right: 28,
+    bottom: 44,
+    borderRadius: 36,
+    shadowColor: ACCENT,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.22,
+    shadowRadius: 16,
+    elevation: 10,
   },
   fab: {
-    position: "absolute",
-    right: 24,
-    bottom: 36,
     backgroundColor: ACCENT,
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: ACCENT,
+    shadowColor: ACCENT2,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.22,
-    shadowRadius: 8,
-    elevation: 6,
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    elevation: 8,
   },
   emptyContainer: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 60,
+    marginTop: 80,
   },
   emptyEmoji: {
-    fontSize: 54,
-    marginBottom: 10,
+    fontSize: 70,
+    marginBottom: 16,
   },
   emptyText: {
     fontFamily: "Raleway_700Bold",
-    fontSize: 22,
-    color: SUBTLE,
-    marginBottom: 4,
+    fontSize: 26,
+    color: ACCENT,
+    marginBottom: 6,
+    letterSpacing: 0.2,
   },
   emptySub: {
     fontFamily: "Raleway_400Regular",
-    fontSize: 16,
+    fontSize: 18,
     color: SUBTLE,
   },
-  // BEAUTIFUL, SOFT MODAL OVERLAY
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(247,247,251,0.7)", // much lighter, soft overlay
+    backgroundColor: "rgba(247,240,255,0.85)",
     justifyContent: "center",
     alignItems: "center",
-    // Optionally, add a subtle border or shadow for extra polish
   },
   modalContainer: {
     width: "100%",
@@ -403,47 +486,49 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   modalCard: {
-    width: "88%",
+    width: "90%",
     backgroundColor: "#fff",
-    borderRadius: 18,
-    padding: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
+    borderRadius: 22,
+    padding: 28,
+    shadowColor: ACCENT,
+    shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.18,
-    shadowRadius: 16,
-    elevation: 10,
+    shadowRadius: 24,
+    elevation: 12,
+    alignItems: "stretch",
   },
   modalTitle: {
     fontFamily: "Raleway_700Bold",
-    fontSize: 20,
-    color: TEXT,
-    marginBottom: 16,
+    fontSize: 22,
+    color: ACCENT,
+    marginBottom: 18,
+    textAlign: "center",
   },
   input: {
     fontFamily: "Raleway_400Regular",
-    fontSize: 18,
+    fontSize: 20,
     borderWidth: 1.5,
     borderColor: ACCENT,
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 18,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 22,
     color: TEXT,
     backgroundColor: "#f8f8ff",
   },
   modalActions: {
     flexDirection: "row",
     justifyContent: "flex-end",
-    gap: 12,
+    gap: 14,
   },
   modalBtn: {
-    paddingVertical: 10,
-    paddingHorizontal: 22,
-    borderRadius: 8,
-    marginLeft: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 28,
+    borderRadius: 10,
+    marginLeft: 10,
   },
   modalBtnText: {
     fontFamily: "Raleway_700Bold",
-    fontSize: 16,
+    fontSize: 17,
     color: "#fff",
   },
 });
