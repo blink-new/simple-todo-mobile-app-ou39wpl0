@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -19,15 +19,13 @@ import {
 import { Check, Plus, Trash2 } from "lucide-react-native";
 import { useFonts, Raleway_700Bold, Raleway_400Regular } from "@expo-google-fonts/raleway";
 
-const ACCENT = "#7C3AED"; // playful purple
-const ACCENT2 = "#F472B6"; // playful pink
+const ACCENT = "#7C3AED";
+const ACCENT2 = "#F472B6";
 const BG_GRADIENT_START = "#F7F0FF";
-const BG_GRADIENT_END = "#E0EAFC";
 const CARD = "#FFFFFF";
 const TEXT = "#22223B";
 const SUBTLE = "#9A9AB0";
 const COMPLETE = "#B2F2BB";
-const SHADOW = "#E0E0F7";
 
 type Todo = {
   id: string;
@@ -35,8 +33,9 @@ type Todo = {
   completed: boolean;
 };
 
+const { width } = Dimensions.get("window");
+
 function GradientBackground({ children }: { children: React.ReactNode }) {
-  // Simple gradient using two absolutely positioned Views
   return (
     <View style={{ flex: 1 }}>
       <View style={styles.gradientBg} />
@@ -68,7 +67,7 @@ function TodoItem({
 }) {
   const anim = useRef(new Animated.Value(todo.completed ? 1 : 0)).current;
 
-  React.useEffect(() => {
+  useEffect(() => {
     Animated.timing(anim, {
       toValue: todo.completed ? 1 : 0,
       duration: 300,
@@ -140,7 +139,7 @@ function TodoModal({
 }) {
   const [text, setText] = useState(initialText || "");
 
-  React.useEffect(() => {
+  useEffect(() => {
     setText(initialText || "");
   }, [initialText, visible]);
 
@@ -208,16 +207,35 @@ function TodoModal({
 }
 
 export default function App() {
-  const [todos, setTodos] = useState<Todo[]>([]);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [editing, setEditing] = useState<{ id: string; text: string } | null>(null);
-
   let [fontsLoaded] = useFonts({
     Raleway_700Bold,
     Raleway_400Regular,
   });
 
+  // All hooks must be at the top level, before any return
+  const [todos, setTodos] = useState<Todo[]>([]);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [editing, setEditing] = useState<{ id: string; text: string } | null>(null);
+
+  // FAB animation
+  const fabScale = useRef(new Animated.Value(1)).current;
+  const animateFab = () => {
+    Animated.sequence([
+      Animated.timing(fabScale, {
+        toValue: 1.12,
+        duration: 120,
+        useNativeDriver: true,
+      }),
+      Animated.timing(fabScale, {
+        toValue: 1,
+        duration: 120,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
   if (!fontsLoaded) {
+    // No hooks below this return!
     return (
       <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
         <Text style={{ fontSize: 20, color: ACCENT }}>Loading...</Text>
@@ -253,23 +271,6 @@ export default function App() {
         t.id === id ? { ...t, completed: !t.completed } : t
       )
     );
-  };
-
-  // FAB animation
-  const fabScale = useRef(new Animated.Value(1)).current;
-  const animateFab = () => {
-    Animated.sequence([
-      Animated.timing(fabScale, {
-        toValue: 1.12,
-        duration: 120,
-        useNativeDriver: true,
-      }),
-      Animated.timing(fabScale, {
-        toValue: 1,
-        duration: 120,
-        useNativeDriver: true,
-      }),
-    ]).start();
   };
 
   return (
@@ -330,8 +331,6 @@ export default function App() {
   );
 }
 
-const { width } = Dimensions.get("window");
-
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -341,16 +340,12 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     zIndex: -1,
     backgroundColor: BG_GRADIENT_START,
-    // Simulate a gradient with two overlapping views
-    // (for real gradients, use expo-linear-gradient, but keeping it dependency-free)
     borderBottomLeftRadius: width * 0.7,
     borderBottomRightRadius: width * 0.7,
     height: 340,
     top: -80,
     left: -width * 0.1,
     right: -width * 0.1,
-    background: undefined,
-    backgroundColor: BG_GRADIENT_START,
     shadowColor: ACCENT2,
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.12,
