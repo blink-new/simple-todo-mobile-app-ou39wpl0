@@ -15,8 +15,9 @@ import {
   Platform,
   SafeAreaView,
   Dimensions,
+  ScrollView,
 } from "react-native";
-import { Check, Plus, Trash2 } from "lucide-react-native";
+import { Check, Plus, Trash2, FileText } from "lucide-react-native";
 import { useFonts, Raleway_700Bold, Raleway_400Regular } from "@expo-google-fonts/raleway";
 
 const ACCENT = "#7C3AED";
@@ -30,6 +31,7 @@ const COMPLETE = "#B2F2BB";
 type Todo = {
   id: string;
   text: string;
+  description: string;
   completed: boolean;
 };
 
@@ -113,6 +115,12 @@ function TodoItem({
         >
           {todo.text}
         </Text>
+        {todo.description ? (
+          <Text style={styles.todoDescription} numberOfLines={2}>
+            <FileText size={16} color={SUBTLE} style={{ marginRight: 4 }} />
+            {todo.description}
+          </Text>
+        ) : null}
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.deleteBtn}
@@ -131,17 +139,22 @@ function TodoModal({
   onClose,
   onSave,
   initialText,
+  initialDescription,
 }: {
   visible: boolean;
   onClose: () => void;
-  onSave: (text: string) => void;
+  onSave: (text: string, description: string) => void;
   initialText?: string;
+  initialDescription?: string;
 }) {
+  // Hooks at top level of component
   const [text, setText] = useState(initialText || "");
+  const [description, setDescription] = useState(initialDescription || "");
 
   useEffect(() => {
     setText(initialText || "");
-  }, [initialText, visible]);
+    setDescription(initialDescription || "");
+  }, [initialText, initialDescription, visible]);
 
   return (
     <Modal
@@ -169,9 +182,21 @@ function TodoModal({
               placeholderTextColor={SUBTLE}
               onSubmitEditing={() => {
                 if (text.trim()) {
-                  onSave(text.trim());
+                  onSave(text.trim(), description.trim());
                 }
               }}
+              returnKeyType="next"
+            />
+            <TextInput
+              style={styles.inputDescription}
+              placeholder="Add a description or notes (optional)"
+              value={description}
+              onChangeText={setDescription}
+              maxLength={300}
+              placeholderTextColor={SUBTLE}
+              multiline
+              numberOfLines={3}
+              textAlignVertical="top"
             />
             <View style={styles.modalActions}>
               <Pressable
@@ -181,7 +206,7 @@ function TodoModal({
                 ]}
                 onPress={() => {
                   if (text.trim()) {
-                    onSave(text.trim());
+                    onSave(text.trim(), description.trim());
                   }
                 }}
                 accessibilityLabel="Save todo"
@@ -207,15 +232,15 @@ function TodoModal({
 }
 
 export default function App() {
+  // All hooks at top level
   let [fontsLoaded] = useFonts({
     Raleway_700Bold,
     Raleway_400Regular,
   });
 
-  // All hooks must be at the top level, before any return
   const [todos, setTodos] = useState<Todo[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
-  const [editing, setEditing] = useState<{ id: string; text: string } | null>(null);
+  const [editing, setEditing] = useState<{ id: string; text: string; description: string } | null>(null);
 
   // FAB animation
   const fabScale = useRef(new Animated.Value(1)).current;
@@ -243,18 +268,18 @@ export default function App() {
     );
   }
 
-  const handleAdd = (text: string) => {
+  const handleAdd = (text: string, description: string) => {
     setTodos((prev) => [
       ...prev,
-      { id: Date.now().toString(), text, completed: false },
+      { id: Date.now().toString(), text, description, completed: false },
     ]);
     setModalVisible(false);
   };
 
-  const handleEdit = (text: string) => {
+  const handleEdit = (text: string, description: string) => {
     setTodos((prev) =>
       prev.map((t) =>
-        t.id === editing?.id ? { ...t, text } : t
+        t.id === editing?.id ? { ...t, text, description } : t
       )
     );
     setEditing(null);
@@ -288,7 +313,7 @@ export default function App() {
                 onToggle={() => handleToggle(item.id)}
                 onDelete={() => handleDelete(item.id)}
                 onEdit={() => {
-                  setEditing({ id: item.id, text: item.text });
+                  setEditing({ id: item.id, text: item.text, description: item.description });
                   setModalVisible(true);
                 }}
               />
@@ -316,14 +341,15 @@ export default function App() {
               setEditing(null);
               setModalVisible(false);
             }}
-            onSave={(text) => {
+            onSave={(text, description) => {
               if (editing) {
-                handleEdit(text);
+                handleEdit(text, description);
               } else {
-                handleAdd(text);
+                handleAdd(text, description);
               }
             }}
             initialText={editing?.text}
+            initialDescription={editing?.description}
           />
         </View>
       </GradientBackground>
@@ -410,6 +436,14 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: TEXT,
     letterSpacing: 0.1,
+  },
+  todoDescription: {
+    fontFamily: "Raleway_400Regular",
+    fontSize: 15,
+    color: SUBTLE,
+    marginTop: 4,
+    flexDirection: "row",
+    alignItems: "center",
   },
   deleteBtn: {
     marginLeft: 8,
@@ -506,9 +540,22 @@ const styles = StyleSheet.create({
     borderColor: ACCENT,
     borderRadius: 12,
     padding: 14,
-    marginBottom: 22,
+    marginBottom: 12,
     color: TEXT,
     backgroundColor: "#f8f8ff",
+  },
+  inputDescription: {
+    fontFamily: "Raleway_400Regular",
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: ACCENT2,
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 22,
+    color: TEXT,
+    backgroundColor: "#faf7ff",
+    minHeight: 60,
+    maxHeight: 120,
   },
   modalActions: {
     flexDirection: "row",
