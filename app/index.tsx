@@ -388,11 +388,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: SUBTLE,
   },
+  // BEAUTIFUL, SOFT MODAL OVERLAY
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(34,34,59,0.18)",
+    backgroundColor: "rgba(247,247,251,0.7)", // much lighter, soft overlay
     justifyContent: "center",
     alignItems: "center",
+    // Optionally, add a subtle border or shadow for extra polish
   },
   modalContainer: {
     width: "100%",
