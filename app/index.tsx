@@ -15,18 +15,17 @@ import {
   Platform,
   SafeAreaView,
   Dimensions,
-  ScrollView,
 } from "react-native";
 import { Check, Plus, Trash2, FileText } from "lucide-react-native";
-import { useFonts, Raleway_700Bold, Raleway_400Regular } from "@expo-google-fonts/raleway";
+import { useFonts, Inter_700Bold, Inter_400Regular } from "@expo-google-fonts/inter";
 
-const ACCENT = "#7C3AED";
-const ACCENT2 = "#F472B6";
-const BG_GRADIENT_START = "#F7F0FF";
+const ACCENT = "#111827"; // Vercel dark
+const ACCENT2 = "#6366F1"; // Vercel blue accent
+const BG_GRADIENT_START = "#F8FAFC";
 const CARD = "#FFFFFF";
-const TEXT = "#22223B";
-const SUBTLE = "#9A9AB0";
-const COMPLETE = "#B2F2BB";
+const TEXT = "#111827";
+const SUBTLE = "#6B7280";
+const COMPLETE = "#E5E7EB";
 
 type Todo = {
   id: string;
@@ -49,7 +48,7 @@ function GradientBackground({ children }: { children: React.ReactNode }) {
 function EmptyState() {
   return (
     <View style={styles.emptyContainer}>
-      <Text style={styles.emptyEmoji}>🦄</Text>
+      <Text style={styles.emptyEmoji}>⚡️</Text>
       <Text style={styles.emptyText}>No todos yet!</Text>
       <Text style={styles.emptySub}>Tap the + to add your first task.</Text>
     </View>
@@ -94,7 +93,7 @@ function TodoItem({
         <View
           style={[
             styles.checkboxBase,
-            todo.completed && { backgroundColor: ACCENT, borderColor: ACCENT },
+            todo.completed && { backgroundColor: ACCENT2, borderColor: ACCENT2 },
           ]}
         >
           {todo.completed && <Check color="#fff" size={20} />}
@@ -147,7 +146,6 @@ function TodoModal({
   initialText?: string;
   initialDescription?: string;
 }) {
-  // Hooks at top level of component
   const [text, setText] = useState(initialText || "");
   const [description, setDescription] = useState(initialDescription || "");
 
@@ -186,6 +184,7 @@ function TodoModal({
                 }
               }}
               returnKeyType="next"
+              selectionColor={ACCENT2}
             />
             <TextInput
               style={styles.inputDescription}
@@ -197,12 +196,13 @@ function TodoModal({
               multiline
               numberOfLines={3}
               textAlignVertical="top"
+              selectionColor={ACCENT2}
             />
             <View style={styles.modalActions}>
               <Pressable
                 style={({ pressed }) => [
                   styles.modalBtn,
-                  { backgroundColor: pressed ? "#ececff" : ACCENT },
+                  { backgroundColor: pressed ? "#e0e7ff" : ACCENT2 },
                 ]}
                 onPress={() => {
                   if (text.trim()) {
@@ -216,12 +216,12 @@ function TodoModal({
               <Pressable
                 style={({ pressed }) => [
                   styles.modalBtn,
-                  { backgroundColor: pressed ? "#f2f2f2" : "#fff", borderWidth: 1, borderColor: ACCENT },
+                  { backgroundColor: pressed ? "#f3f4f6" : "#fff", borderWidth: 1, borderColor: ACCENT2 },
                 ]}
                 onPress={onClose}
                 accessibilityLabel="Cancel"
               >
-                <Text style={[styles.modalBtnText, { color: ACCENT }]}>Cancel</Text>
+                <Text style={[styles.modalBtnText, { color: ACCENT2 }]}>Cancel</Text>
               </Pressable>
             </View>
           </Animated.View>
@@ -232,10 +232,9 @@ function TodoModal({
 }
 
 export default function App() {
-  // All hooks at top level
   let [fontsLoaded] = useFonts({
-    Raleway_700Bold,
-    Raleway_400Regular,
+    Inter_700Bold,
+    Inter_400Regular,
   });
 
   const [todos, setTodos] = useState<Todo[]>([]);
@@ -260,13 +259,18 @@ export default function App() {
   };
 
   if (!fontsLoaded) {
-    // No hooks below this return!
     return (
       <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
-        <Text style={{ fontSize: 20, color: ACCENT }}>Loading...</Text>
+        <Text style={{ fontSize: 20, color: ACCENT2 }}>Loading...</Text>
       </View>
     );
   }
+
+  // Sort: incomplete first, then completed
+  const sortedTodos = [...todos].sort((a, b) => {
+    if (a.completed === b.completed) return 0;
+    return a.completed ? 1 : -1;
+  });
 
   const handleAdd = (text: string, description: string) => {
     setTodos((prev) => [
@@ -304,7 +308,7 @@ export default function App() {
         <View style={styles.container}>
           <Text style={styles.header}>My Todos</Text>
           <FlatList
-            data={todos}
+            data={sortedTodos}
             keyExtractor={(item) => item.id}
             contentContainerStyle={{ flexGrow: 1, paddingBottom: 120 }}
             renderItem={({ item }) => (
@@ -385,13 +389,13 @@ const styles = StyleSheet.create({
     paddingTop: 10,
   },
   header: {
-    fontFamily: "Raleway_700Bold",
+    fontFamily: "Inter_700Bold",
     fontSize: 36,
     color: ACCENT,
     marginBottom: 22,
     marginTop: 18,
     letterSpacing: 0.5,
-    textShadowColor: "#f3e8ff",
+    textShadowColor: "#e0e7ef",
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 8,
   },
@@ -403,7 +407,7 @@ const styles = StyleSheet.create({
     paddingVertical: 18,
     paddingHorizontal: 18,
     marginBottom: 16,
-    shadowColor: "#B794F4",
+    shadowColor: "#6366F1",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.13,
     shadowRadius: 12,
@@ -417,7 +421,7 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 10,
     borderWidth: 2.5,
-    borderColor: ACCENT,
+    borderColor: ACCENT2,
     backgroundColor: "#fff",
     alignItems: "center",
     justifyContent: "center",
@@ -432,13 +436,13 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   todoText: {
-    fontFamily: "Raleway_400Regular",
+    fontFamily: "Inter_400Regular",
     fontSize: 20,
     color: TEXT,
     letterSpacing: 0.1,
   },
   todoDescription: {
-    fontFamily: "Raleway_400Regular",
+    fontFamily: "Inter_400Regular",
     fontSize: 15,
     color: SUBTLE,
     marginTop: 4,
@@ -449,8 +453,8 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     padding: 6,
     borderRadius: 10,
-    backgroundColor: "#F8F0FC",
-    shadowColor: "#F472B6",
+    backgroundColor: "#F3F4F6",
+    shadowColor: "#6366F1",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
     shadowRadius: 2,
@@ -461,14 +465,14 @@ const styles = StyleSheet.create({
     right: 28,
     bottom: 44,
     borderRadius: 36,
-    shadowColor: ACCENT,
+    shadowColor: ACCENT2,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.22,
     shadowRadius: 16,
     elevation: 10,
   },
   fab: {
-    backgroundColor: ACCENT,
+    backgroundColor: ACCENT2,
     width: 72,
     height: 72,
     borderRadius: 36,
@@ -491,20 +495,20 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   emptyText: {
-    fontFamily: "Raleway_700Bold",
+    fontFamily: "Inter_700Bold",
     fontSize: 26,
-    color: ACCENT,
+    color: ACCENT2,
     marginBottom: 6,
     letterSpacing: 0.2,
   },
   emptySub: {
-    fontFamily: "Raleway_400Regular",
+    fontFamily: "Inter_400Regular",
     fontSize: 18,
     color: SUBTLE,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(247,240,255,0.85)",
+    backgroundColor: "rgba(248,250,252,0.92)",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -519,7 +523,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 22,
     padding: 28,
-    shadowColor: ACCENT,
+    shadowColor: ACCENT2,
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.18,
     shadowRadius: 24,
@@ -527,25 +531,25 @@ const styles = StyleSheet.create({
     alignItems: "stretch",
   },
   modalTitle: {
-    fontFamily: "Raleway_700Bold",
+    fontFamily: "Inter_700Bold",
     fontSize: 22,
-    color: ACCENT,
+    color: ACCENT2,
     marginBottom: 18,
     textAlign: "center",
   },
   input: {
-    fontFamily: "Raleway_400Regular",
+    fontFamily: "Inter_400Regular",
     fontSize: 20,
     borderWidth: 1.5,
-    borderColor: ACCENT,
+    borderColor: ACCENT2,
     borderRadius: 12,
     padding: 14,
     marginBottom: 12,
     color: TEXT,
-    backgroundColor: "#f8f8ff",
+    backgroundColor: "#f3f4f6",
   },
   inputDescription: {
-    fontFamily: "Raleway_400Regular",
+    fontFamily: "Inter_400Regular",
     fontSize: 16,
     borderWidth: 1,
     borderColor: ACCENT2,
@@ -553,7 +557,7 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 22,
     color: TEXT,
-    backgroundColor: "#faf7ff",
+    backgroundColor: "#f3f4f6",
     minHeight: 60,
     maxHeight: 120,
   },
@@ -569,7 +573,7 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   modalBtnText: {
-    fontFamily: "Raleway_700Bold",
+    fontFamily: "Inter_700Bold",
     fontSize: 17,
     color: "#fff",
   },
